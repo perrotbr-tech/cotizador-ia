@@ -356,16 +356,6 @@ create trigger al_crear_usuario
   after insert on auth.users
   for each row execute function public.enlazar_usuario_nuevo();
 
--- Enlaza tambien los usuarios que ya existian antes de aplicar esta migracion.
-insert into public.perfiles (id, empresa_id, nombre)
-select
-  u.id,
-  (select id from public.empresas order by creada_en, id limit 1),
-  split_part(u.email, '@', 1)
-from auth.users u
-where (select count(*) from public.empresas) > 0
-on conflict (id) do nothing;
-
 -- =====================================================================
 -- Datos iniciales
 -- =====================================================================
@@ -404,3 +394,19 @@ values
   ('00000000-0000-0000-0000-000000000001', 'Shein',         'shein',         'excluida', true),
   ('00000000-0000-0000-0000-000000000001', 'Amazon',        'amazon',        'excluida', true)
 on conflict (empresa_id, alias) do nothing;
+
+-- =====================================================================
+-- Enlace de los usuarios que ya existian
+--
+-- Va despues de los datos iniciales: en la primera aplicacion la empresa
+-- recien existe aqui, y antes de este punto no habria con quien enlazar.
+-- =====================================================================
+
+insert into public.perfiles (id, empresa_id, nombre)
+select
+  u.id,
+  (select id from public.empresas order by creada_en, id limit 1),
+  split_part(u.email, '@', 1)
+from auth.users u
+where exists (select 1 from public.empresas)
+on conflict (id) do nothing;

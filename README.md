@@ -113,12 +113,15 @@ DATABASE_URL=postgres://postgres@localhost:5432/cotizador_prueba \
   ./scripts/verificar-migracion.sh
 ```
 
-El script monta un andamio que imita el esquema `auth` y los roles de Supabase, aplica la
-migración dos veces para comprobar que es idempotente, y corre las verificaciones de
+La base tiene que estar vacía: el script monta un andamio que imita el esquema `auth` y los
+roles de Supabase, crea un usuario **antes** de aplicar la migración, la aplica dos veces para
+comprobar que es idempotente, y corre las verificaciones de
 `supabase/pruebas/verificar-0001.sql`: las 10 tablas con seguridad a nivel de fila, ninguna
 política que alcance al rol anónimo, `empresa_id` en todas las tablas, todas las columnas de
 dinero en entero, los datos iniciales, los rangos del margen, la regla de código de una
-cotización aprobada, la cantidad con decimales y el trigger del usuario nuevo.
+cotización aprobada, la cantidad con decimales y el trigger del usuario nuevo. Al final,
+`supabase/pruebas/verificar-usuario-previo.sql` comprueba que ese usuario anterior a la
+migración también quedó enlazado con la empresa.
 
 ## Despliegue
 
